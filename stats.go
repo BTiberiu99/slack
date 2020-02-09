@@ -3,6 +3,7 @@ package slack
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"time"
 
@@ -35,8 +36,15 @@ func NewStats(config *ConfigStats) (*Stats, error) {
 	if config.AppName == "" {
 		config.AppName = "Default"
 	}
+
+	hostname, err := os.Hostname()
+
+	if err == nil {
+		hostname = "@" + hostname
+	}
+
 	return &Stats{
-		appName:         config.AppName,
+		appName:         config.AppName + hostname,
 		report:          config.Report,
 		thresholdMemory: config.ThresholdMemory,
 		thresholdCPU:    config.ThresholdCPU,

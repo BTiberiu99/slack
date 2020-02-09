@@ -84,6 +84,7 @@ func transfToPayload(message string, messages ...string) slack.Payload {
 
 	if len(messages) > 0 {
 		attachments := make([]slack.Attachment, len(messages))
+		red := hexRed
 		for i := 0; i < len(messages); i++ {
 
 			text := replaceColors(messages[i])
@@ -93,7 +94,6 @@ func transfToPayload(message string, messages ...string) slack.Payload {
 			}
 
 			if strings.Contains(messages[i], Red) {
-				red := hexRed
 				attachments[i].Color = &red
 			}
 		}
@@ -120,6 +120,7 @@ func (r *Report) Error(err error) error {
 		stacks := strings.Split(tracerr.SprintSourceColor(err), "\n")
 
 		return send(r.webhook, stacks[0], stacks[1:]...)
+
 	} else {
 		tracerr.PrintSourceColor(err)
 	}

@@ -3,7 +3,8 @@ package stats
 import (
 	"fmt"
 	"os"
-	"util/slack"
+
+	"github.com/BTiberiu99/util/slack"
 
 	"strconv"
 	"time"

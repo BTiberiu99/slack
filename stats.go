@@ -17,13 +17,13 @@ type Stats struct {
 	thresholdMemory float64
 	thresholdCPU    float64
 	minutes         int
-	report          *slack.Report
+	report          *report
 	appName         string
 	started         bool
 }
 
 type ConfigStats struct {
-	Report          *slack.Report
+	Report          *report
 	Minutes         int
 	ThresholdMemory float64
 	ThresholdCPU    float64

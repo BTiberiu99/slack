@@ -29,7 +29,7 @@ func replaceColors(str string) string {
 	return str
 }
 
-type Report struct {
+type report struct {
 	print        bool
 	webhook      string
 	webhookStats string
@@ -41,15 +41,15 @@ type ConfigReport struct {
 	WebhookStats string
 }
 
-func NewReport(config *ConfigReport) *Report {
-	return &Report{
+func NewReport(config *ConfigReport) *report {
+	return &report{
 		print:        config.Print,
 		webhook:      config.WebhookStats,
 		webhookStats: config.WebhookStats,
 	}
 }
 
-func report(webhook, message string, messages ...string) error {
+func send(webhook, message string, messages ...string) error {
 
 	errs := slack.Send(webhook, "", transfToPayload(message, messages...))
 
@@ -96,12 +96,12 @@ func transfToPayload(message string, messages ...string) slack.Payload {
 	return payload
 }
 
-func (r *Report) Stats(message string, messages ...string) error {
+func (r *report) Stats(message string, messages ...string) error {
 
-	return report(r.webhookStats, message, messages...)
+	return send(r.webhookStats, message, messages...)
 }
 
-func (r *Report) Error(err error) error {
+func (r *report) Error(err error) error {
 	if _, ok := err.(tracerr.Error); !ok {
 		err = tracerr.Wrap(err)
 	}
@@ -110,7 +110,7 @@ func (r *Report) Error(err error) error {
 
 		stacks := strings.Split(tracerr.SprintSourceColor(err), "\n")
 
-		return report(r.webhook, stacks[0], stacks[1:]...)
+		return send(r.webhook, stacks[0], stacks[1:]...)
 	} else {
 		tracerr.PrintSourceColor(err)
 	}

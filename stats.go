@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/BTiberiu99/util/slack"
+	"github.com/BTiberiu99/slack"
 
 	"time"
 

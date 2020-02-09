@@ -42,7 +42,9 @@ func Init() {
 	go func() {
 
 		for {
+
 			time.Sleep(time.Hour * 1)
+
 			if err := sendStats(threshold_memory, threshold_cpu); err != nil {
 				slack.ReportError(err)
 			}

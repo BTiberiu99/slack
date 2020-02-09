@@ -1,2 +1,4 @@
-# licenta-utilities
-Licenta Utilities 
+#
+
+Integration with slack for monitoring an go application.
+

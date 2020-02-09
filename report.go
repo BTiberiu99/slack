@@ -41,12 +41,21 @@ type ConfigReport struct {
 	WebhookStats string
 }
 
-func NewReport(config *ConfigReport) *Report {
+func NewReport(config *ConfigReport) (*Report, error) {
+
+	if config.Webhook == "" {
+		return nil, errors.New("Webhook is not defined!")
+	}
+
+	if config.WebhookStats == "" {
+		return nil, errors.New("WebhookStats is not defined!")
+	}
+
 	return &Report{
 		print:        config.Print,
 		webhook:      config.WebhookStats,
 		webhookStats: config.WebhookStats,
-	}
+	}, nil
 }
 
 func send(webhook, message string, messages ...string) error {

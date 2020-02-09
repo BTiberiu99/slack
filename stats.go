@@ -52,6 +52,7 @@ func NewStats(config *ConfigStats) (*Stats, error) {
 		report:          config.Report,
 		thresholdMemory: config.ThresholdMemory,
 		thresholdCPU:    config.ThresholdCPU,
+		minutes:         config.Minutes,
 	}, nil
 }
 

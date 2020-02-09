@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/BTiberiu99/slack"
-
 	"time"
 
 	"github.com/mackerelio/go-osstat/cpu"

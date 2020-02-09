@@ -1,12 +1,11 @@
 package stats
 
 import (
+	"errors"
 	"fmt"
-	"os"
 
 	"github.com/BTiberiu99/util/slack"
 
-	"strconv"
 	"time"
 
 	"github.com/mackerelio/go-osstat/cpu"
@@ -14,48 +13,60 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
-var (
-	start = false
-)
+type Stats struct {
+	thresholdMemory float64
+	thresholdCPU    float64
+	minutes         int
+	report          *slack.Report
+	appName         string
+	started         bool
+}
 
-func Init() {
-	if start {
+type ConfigStats struct {
+	Report          *slack.Report
+	Minutes         int
+	ThresholdMemory float64
+	ThresholdCPU    float64
+	AppName         string
+}
+
+func NewStats(config *ConfigStats) (*Stats, error) {
+	if config.Report == nil {
+		return nil, errors.New("Report must not be nil!")
+	}
+	if config.AppName == "" {
+		config.AppName = "Default"
+	}
+	return &Stats{
+		appName:         config.AppName,
+		report:          config.Report,
+		thresholdMemory: config.ThresholdMemory,
+		thresholdCPU:    config.ThresholdCPU,
+	}, nil
+}
+
+func (s *Stats) Start() {
+
+	if s.started {
 		return
 	}
-
-	start = true
-
-	threshold_memory, err := strconv.ParseFloat(os.Getenv("THRESHOLD_MEMORY"), 64)
-
-	if err != nil {
-		slack.ReportError(err)
-		return
-	}
-
-	threshold_cpu, err := strconv.ParseFloat(os.Getenv("THRESHOLD_CPU"), 64)
-
-	if err != nil {
-		slack.ReportError(err)
-		return
-	}
-
+	s.started = true
 	go func() {
 
 		for {
 
-			time.Sleep(time.Hour * 1)
+			time.Sleep(time.Minute * time.Duration(s.minutes))
 
-			if err := sendStats(threshold_memory, threshold_cpu); err != nil {
-				slack.ReportError(err)
+			if err := s.sendStats(); err != nil {
+				s.report.Error(err)
 			}
 
 		}
 
 	}()
-
 }
 
-func sendStats(threshold_memory, threshold_cpu float64) error {
+func (s *Stats) sendStats() error {
 
 	memory, err := memory.Get()
 
@@ -80,16 +91,18 @@ func sendStats(threshold_memory, threshold_cpu float64) error {
 	div := float64(1024 * 1024 * 1024)
 
 	markRedMem := ""
-	if float64(memory.Total-memory.Used)/(1024*1024) < threshold_memory {
+
+	if float64(memory.Total-memory.Used)/(1024*1024) < s.thresholdMemory {
 		markRedMem = slack.Red
 	}
 
 	markRedCpu := ""
-	if float64(after.User-before.User)/total*100 > threshold_cpu {
+
+	if float64(after.User-before.User)/total*100 > s.thresholdCPU {
 		markRedCpu = slack.Red
 	}
 
-	slack.ReportStats(os.Getenv("APP_NAME"),
+	s.report.Stats(s.appName,
 		fmt.Sprintf("Memory Total: %0.3f GB\n", float64(memory.Total)/div),
 		fmt.Sprintf("%sMemory Used: %0.3f GB\n", markRedMem, float64(memory.Used)/div),
 		fmt.Sprintf("Memory Cached:  %0.3f GB\n", float64(memory.Cached)/div),

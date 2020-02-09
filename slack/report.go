@@ -1,8 +1,8 @@
 package slack
 
 import (
+	"errors"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/ashwanthkumar/slack-go-webhook"
@@ -19,7 +19,6 @@ const (
 
 var (
 	colors = []string{Black, Red, EndColor, White}
-	LIVE   = false
 )
 
 func replaceColors(str string) string {
@@ -30,20 +29,47 @@ func replaceColors(str string) string {
 	return str
 }
 
-func report(webhook, message string, messages ...string) {
+type Report struct {
+	print        bool
+	webhook      string
+	webhookStats string
+}
 
-	err := slack.Send(webhook, "", transfToPayload(message, messages...))
-	if len(err) > 0 {
-		fmt.Printf("error: %s\n", err)
+type ConfigReport struct {
+	Print        bool
+	Webhook      string
+	WebhookStats string
+}
+
+func NewReport(config *ConfigReport) *Report {
+	return &Report{
+		print:        config.Print,
+		webhook:      config.WebhookStats,
+		webhookStats: config.WebhookStats,
 	}
+}
+
+func report(webhook, message string, messages ...string) error {
+
+	errs := slack.Send(webhook, "", transfToPayload(message, messages...))
+
+	if len(errs) > 0 {
+		errString := ""
+
+		for i := 0; i < len(errs); i++ {
+			errString += errs[i].Error() + "\n"
+		}
+
+		return errors.New(errString)
+	}
+
+	return nil
 
 }
 
 func transfToPayload(message string, messages ...string) slack.Payload {
 	payload := slack.Payload{
 		Text:     fmt.Sprintf("_*%s*_", message),
-		Username: "Scrapper",
-		Channel:  "#scrapper",
 		Markdown: true,
 	}
 
@@ -70,32 +96,25 @@ func transfToPayload(message string, messages ...string) slack.Payload {
 	return payload
 }
 
-func Report(message string, messages ...string) {
+func (r *Report) Stats(message string, messages ...string) error {
 
-	report(os.Getenv("SLACK_WEBHOOK"), message, messages...)
-
-}
-func ReportStats(message string, messages ...string) {
-
-	report(os.Getenv("SLACK_WEBHOOK_STATS"), message, messages...)
+	return report(r.webhookStats, message, messages...)
 }
 
-func ReportError(err error) {
+func (r *Report) Error(err error) error {
 	if _, ok := err.(tracerr.Error); !ok {
 		err = tracerr.Wrap(err)
 	}
 
-	if LIVE {
+	if r.print {
 
 		stacks := strings.Split(tracerr.SprintSourceColor(err), "\n")
 
-		report(os.Getenv("SLACK_WEBHOOK"), stacks[0], stacks[1:]...)
+		return report(r.webhook, stacks[0], stacks[1:]...)
 	} else {
 		tracerr.PrintSourceColor(err)
 	}
 
-}
+	return nil
 
-func EnvLoaded() {
-	LIVE = os.Getenv("LIVE") == "true"
 }

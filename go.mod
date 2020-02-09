@@ -1,4 +1,4 @@
-module util
+module github.com/BTiberiu99/util
 
 go 1.13
 

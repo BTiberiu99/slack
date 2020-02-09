@@ -1,4 +1,4 @@
-module github.com/BTiberiu99/util
+module github.com/BTiberiu99/slack
 
 go 1.13
 

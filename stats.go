@@ -100,7 +100,7 @@ func (s *Stats) sendStats() error {
 		markRedCpu = Red
 	}
 
-	s.report.Stats(s.appName,
+	err = s.report.Stats(s.appName,
 		fmt.Sprintf("Memory Total: %0.3f GB\n", float64(memory.Total)/div),
 		fmt.Sprintf("%sMemory Used: %0.3f GB\n", markRedMem, float64(memory.Used)/div),
 		fmt.Sprintf("Memory Cached:  %0.3f GB\n", float64(memory.Cached)/div),
@@ -109,6 +109,9 @@ func (s *Stats) sendStats() error {
 		fmt.Sprintf("CPU system: %0.2f %%\n", float64(after.System-before.System)/total*100),
 		fmt.Sprintf("CPU idle: %0.2f %%\n", float64(after.Idle-before.Idle)/total*100),
 	)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

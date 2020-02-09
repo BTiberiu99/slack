@@ -15,13 +15,13 @@ type Stats struct {
 	thresholdMemory float64
 	thresholdCPU    float64
 	minutes         int
-	report          *report
+	report          *Report
 	appName         string
 	started         bool
 }
 
 type ConfigStats struct {
-	Report          *report
+	Report          *Report
 	Minutes         int
 	ThresholdMemory float64
 	ThresholdCPU    float64
@@ -91,13 +91,13 @@ func (s *Stats) sendStats() error {
 	markRedMem := ""
 
 	if float64(memory.Total-memory.Used)/(1024*1024) < s.thresholdMemory {
-		markRedMem = slack.Red
+		markRedMem = Red
 	}
 
 	markRedCpu := ""
 
 	if float64(after.User-before.User)/total*100 > s.thresholdCPU {
-		markRedCpu = slack.Red
+		markRedCpu = Red
 	}
 
 	s.report.Stats(s.appName,

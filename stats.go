@@ -37,6 +37,7 @@ func NewStats(config *ConfigStats) (*Stats, error) {
 	if config.Report == nil {
 		return nil, errors.New("Report must not be nil!")
 	}
+
 	if config.AppName == "" {
 		config.AppName = "Default"
 	}
@@ -61,7 +62,9 @@ func (s *Stats) Start() {
 	if s.started {
 		return
 	}
+
 	s.started = true
+
 	go func() {
 
 		for {

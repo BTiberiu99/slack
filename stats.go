@@ -17,20 +17,30 @@ const (
 )
 
 type Stats struct {
+	appName         string
+	report          *Report
+	minutes         int
 	thresholdMemory float64
 	thresholdCPU    float64
-	minutes         int
-	report          *Report
-	appName         string
-	started         bool
+
+	//For singletone gorutine
+	started bool
 }
 
 type ConfigStats struct {
-	Report          *Report
-	Minutes         int
+
+	//Application Name
+	AppName string
+
+	//Report
+	Report *Report
+
+	//Report time
+	Minutes int
+
+	//Thresholds
 	ThresholdMemory float64
 	ThresholdCPU    float64
-	AppName         string
 }
 
 func NewStats(config *ConfigStats) (*Stats, error) {
@@ -95,6 +105,7 @@ func (s *Stats) sendStats() error {
 	}
 
 	time.Sleep(time.Duration(1) * time.Second)
+
 	after, err := cpu.Get()
 
 	if err != nil {
@@ -105,11 +116,15 @@ func (s *Stats) sendStats() error {
 
 	markRedMem, markRedCpu := "", ""
 
-	if float64(memory.Total-memory.Used)/(1024*1024) < s.thresholdMemory {
+	memoryEmpty := float64(memory.Total-memory.Used) / (1024 * 1024)
+
+	if memoryEmpty < s.thresholdMemory {
 		markRedMem = Red
 	}
 
-	if float64(after.User-before.User)/total*100 > s.thresholdCPU {
+	cpuUsage := float64(after.User-before.User) / total * 100
+
+	if cpuUsage > s.thresholdCPU {
 		markRedCpu = Red
 	}
 

@@ -3,6 +3,7 @@ package slack
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/ashwanthkumar/slack-go-webhook"
@@ -18,26 +19,27 @@ const (
 )
 
 var (
-	colors = []string{Black, Red, EndColor, White}
+	colors             = []string{Black, Red, EndColor, White}
+	regexReplaceColors = regexp.MustCompile(strings.Join(colors, "|"))
 )
 
-func replaceColors(str string) string {
-
-	for _, color := range colors {
-		str = strings.ReplaceAll(str, color, "")
-	}
-	return str
-}
-
 type Report struct {
-	print        bool
-	webhook      string
+	print bool
+
+	webhook string
+
 	webhookStats string
 }
 
 type ConfigReport struct {
-	Print        bool
-	Webhook      string
+
+	//Print or send to slack errors
+	Print bool
+
+	//Webhook for errors
+	Webhook string
+
+	//Webhook for sending stats
 	WebhookStats string
 }
 
@@ -58,10 +60,12 @@ func NewReport(config *ConfigReport) (*Report, error) {
 	}, nil
 }
 
+//Sends messages to slack
 func send(webhook, message string, messages ...string) error {
 
 	errs := slack.Send(webhook, "", transfToPayload(message, messages...))
 
+	//Create only one error from multiple errors
 	if len(errs) > 0 {
 		errString := ""
 
@@ -82,47 +86,56 @@ func transfToPayload(message string, messages ...string) slack.Payload {
 		Markdown: true,
 	}
 
-	if len(messages) > 0 {
-		attachments := make([]slack.Attachment, len(messages))
-		red := hexRed
-		for i := 0; i < len(messages); i++ {
+	lenM := len(messages)
 
-			text := replaceColors(messages[i])
+	if lenM == 0 {
+		return payload
+	}
 
-			attachments[i] = slack.Attachment{
-				Text: &text,
-			}
+	attachments := make([]slack.Attachment, lenM)
+	red := hexRed
 
-			if strings.Contains(messages[i], Red) {
-				attachments[i].Color = &red
-			}
+	for i := 0; i < lenM; i++ {
+
+		text := regexReplaceColors.ReplaceAllLiteralString(messages[i], "")
+
+		attachment := slack.Attachment{
+			Text: &text,
 		}
 
-		payload.Attachments = attachments
+		if strings.Contains(messages[i], Red) {
+			attachment.Color = &red
+		}
 
+		attachments[i] = attachment
 	}
+
+	payload.Attachments = attachments
 
 	return payload
 }
 
+//Stats ... Send stats to slack
 func (r *Report) Stats(message string, messages ...string) error {
 
 	return send(r.webhookStats, message, messages...)
 }
 
+//Error ... prints or sends error to slack
 func (r *Report) Error(err error) error {
+
+	//Add wrapper
 	if _, ok := err.(tracerr.Error); !ok {
 		err = tracerr.Wrap(err)
 	}
 
 	if r.print {
+		tracerr.PrintSourceColor(err)
 
+	} else {
 		stacks := strings.Split(tracerr.SprintSourceColor(err), "\n")
 
 		return send(r.webhook, stacks[0], stacks[1:]...)
-
-	} else {
-		tracerr.PrintSourceColor(err)
 	}
 
 	return nil

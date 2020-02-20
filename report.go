@@ -20,7 +20,7 @@ const (
 
 var (
 	colors             = []string{Black, Red, EndColor, White}
-	regexReplaceColors = regexp.MustCompile(strings.Join(colors, "|"))
+	regexReplaceColors = regexp.MustCompile(strings.ReplaceAll(strings.Join(colors, "|"), "[", `\[`))
 )
 
 type Report struct {

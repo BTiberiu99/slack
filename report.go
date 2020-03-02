@@ -55,7 +55,7 @@ func NewReport(config *ConfigReport) (*Report, error) {
 
 	return &Report{
 		print:        config.Print,
-		webhook:      config.WebhookStats,
+		webhook:      config.Webhook,
 		webhookStats: config.WebhookStats,
 	}, nil
 }

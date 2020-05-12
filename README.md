@@ -1,4 +1,2 @@
-#
-
-Integration with slack for monitoring an go application.
+# Integration with slack for monitoring GO application.
 

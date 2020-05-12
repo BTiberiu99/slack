@@ -141,3 +141,9 @@ func (r *Report) Error(err error) error {
 	return nil
 
 }
+
+//ErrorAndPanic ... prints or sends error to slack and panics
+func (r *Report) ErrorAndPanic(err error) {
+	r.Error(err)
+	panic(err)
+}

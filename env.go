@@ -7,17 +7,17 @@ import (
 	"github.com/gobuffalo/envy"
 )
 
-func FromEnv() (*Report, *Stats) {
+func FromEnvReport() (*Report, error) {
 	slackWebhook, err := envy.MustGet("SLACK_WEBHOOK")
 
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	slackWebhookStats, err := envy.MustGet("SLACK_WEBHOOK_STATS")
 
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	report, err := NewReport(&ConfigReport{
@@ -27,28 +27,37 @@ func FromEnv() (*Report, *Stats) {
 	})
 
 	if err != nil {
-		panic(err)
+		return nil, err
+	}
+
+	return report, nil
+}
+
+func FromEnvStats(report *Report) (*Stats, error) {
+
+	if report == nil {
+		return nil, errNoReport
 	}
 
 	minutes, err := strconv.ParseInt(envy.Get("REPORT_STATS_MINUTES", "30"), 10, 64)
 
 	if err != nil {
-		report.Error(err)
-		return report, nil
+
+		return nil, err
 	}
 
 	thresholdMemory, err := strconv.ParseFloat(envy.Get("THRESHOLD_MEMORY", "1024"), 64)
 
 	if err != nil {
-		report.Error(err)
-		return report, nil
+
+		return nil, err
 	}
 
 	thresholdCPU, err := strconv.ParseFloat(envy.Get("THRESHOLD_CPU", "80"), 64)
 
 	if err != nil {
-		report.Error(err)
-		return report, nil
+
+		return nil, err
 	}
 
 	stats, err := NewStats(&ConfigStats{
@@ -59,5 +68,23 @@ func FromEnv() (*Report, *Stats) {
 		AppName:         envy.Get("APP_NAME", "Default App Name"),
 	})
 
-	return report, stats
+	return stats, nil
+
+}
+
+func FromEnv() (*Report, *Stats, error) {
+
+	report, err := FromEnvReport()
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	stats, err := FromEnvStats(report)
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return report, stats, nil
 }

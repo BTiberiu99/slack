@@ -23,6 +23,11 @@ var (
 	regexReplaceColors = regexp.MustCompile(strings.ReplaceAll(strings.Join(colors, "|"), "[", `\[`))
 )
 
+var (
+	errWebhookStats = errors.New("WebhookStats is not defined!")
+	errWebhook      = errors.New("Webhook is not defined!")
+)
+
 type Report struct {
 	print bool
 
@@ -46,11 +51,7 @@ type ConfigReport struct {
 func NewReport(config *ConfigReport) (*Report, error) {
 
 	if config.Webhook == "" {
-		return nil, errors.New("Webhook is not defined!")
-	}
-
-	if config.WebhookStats == "" {
-		return nil, errors.New("WebhookStats is not defined!")
+		return nil, errWebhook
 	}
 
 	return &Report{
@@ -61,9 +62,9 @@ func NewReport(config *ConfigReport) (*Report, error) {
 }
 
 //Sends messages to slack
-func send(webhook, message string, messages ...string) error {
+func send(webhook, message string, messages []string) error {
 
-	errs := slack.Send(webhook, "", transfToPayload(message, messages...))
+	errs := slack.Send(webhook, "", transfToPayload(message, messages))
 
 	//Create only one error from multiple errors
 	if len(errs) > 0 {
@@ -80,7 +81,7 @@ func send(webhook, message string, messages ...string) error {
 
 }
 
-func transfToPayload(message string, messages ...string) slack.Payload {
+func transfToPayload(message string, messages []string) slack.Payload {
 	payload := slack.Payload{
 		Text:     fmt.Sprintf("_*%s*_", message),
 		Markdown: true,
@@ -95,6 +96,7 @@ func transfToPayload(message string, messages ...string) slack.Payload {
 	attachments := make([]slack.Attachment, lenM)
 	red := hexRed
 
+	//Create message
 	for i := 0; i < lenM; i++ {
 
 		text := regexReplaceColors.ReplaceAllLiteralString(messages[i], "")
@@ -117,8 +119,10 @@ func transfToPayload(message string, messages ...string) slack.Payload {
 
 //Stats ... Send stats to slack
 func (r *Report) Stats(message string, messages ...string) error {
-
-	return send(r.webhookStats, message, messages...)
+	if r.webhookStats == "" {
+		return errWebhookStats
+	}
+	return send(r.webhookStats, message, messages)
 }
 
 //Error ... prints or sends error to slack
@@ -130,12 +134,16 @@ func (r *Report) Error(err error) error {
 	}
 
 	if r.print {
+
+		//Print to console
 		tracerr.PrintSourceColor(err)
 
 	} else {
+
+		//Send to slack
 		stacks := strings.Split(tracerr.SprintSourceColor(err), "\n")
 
-		return send(r.webhook, stacks[0], stacks[1:]...)
+		return send(r.webhook, stacks[0], stacks[1:])
 	}
 
 	return nil
@@ -144,6 +152,9 @@ func (r *Report) Error(err error) error {
 
 //ErrorAndPanic ... prints or sends error to slack and panics
 func (r *Report) ErrorAndPanic(err error) {
+	//send error
 	r.Error(err)
+
+	//panic
 	panic(err)
 }

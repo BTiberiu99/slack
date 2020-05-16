@@ -8,20 +8,20 @@ import (
 )
 
 func FromEnvReport() (*Report, error) {
-	slackWebhook, err := envy.MustGet("SLACK_WEBHOOK")
+	slackWebhook, err := envy.MustGet("REPORT_SLACK_WEBHOOK")
 
 	if err != nil {
 		return nil, err
 	}
 
-	slackWebhookStats, err := envy.MustGet("SLACK_WEBHOOK_STATS")
+	slackWebhookStats, err := envy.MustGet("REPORT_SLACK_WEBHOOK_STATS")
 
 	if err != nil {
 		return nil, err
 	}
 
 	report, err := NewReport(&ConfigReport{
-		Print:        strings.ToLower(envy.Get("LIVE", "true")) != "true",
+		Print:        strings.ToLower(envy.Get("REPORT_LIVE", "true")) != "true",
 		Webhook:      slackWebhook,
 		WebhookStats: slackWebhookStats,
 	})
@@ -39,21 +39,21 @@ func FromEnvStats(report *Report) (*Stats, error) {
 		return nil, errNoReport
 	}
 
-	minutes, err := strconv.ParseInt(envy.Get("REPORT_STATS_MINUTES", "30"), 10, 64)
+	minutes, err := strconv.ParseInt(envy.Get("STATS_MINUTES", "30"), 10, 64)
 
 	if err != nil {
 
 		return nil, err
 	}
 
-	thresholdMemory, err := strconv.ParseFloat(envy.Get("THRESHOLD_MEMORY", "1024"), 64)
+	thresholdMemory, err := strconv.ParseFloat(envy.Get("STATS_THRESHOLD_MEMORY", "1024"), 64)
 
 	if err != nil {
 
 		return nil, err
 	}
 
-	thresholdCPU, err := strconv.ParseFloat(envy.Get("THRESHOLD_CPU", "80"), 64)
+	thresholdCPU, err := strconv.ParseFloat(envy.Get("STATS_THRESHOLD_CPU", "80"), 64)
 
 	if err != nil {
 
@@ -65,7 +65,7 @@ func FromEnvStats(report *Report) (*Stats, error) {
 		Minutes:         int(minutes),
 		ThresholdCPU:    thresholdCPU,
 		ThresholdMemory: thresholdMemory,
-		AppName:         envy.Get("APP_NAME", "Default App Name"),
+		AppName:         envy.Get("STATS_APP_NAME", "Default App Name"),
 	})
 
 	return stats, nil

@@ -61,11 +61,12 @@ func FromEnvStats(report *Report) (*Stats, error) {
 	}
 
 	stats, err := NewStats(&ConfigStats{
-		Report:          report,
-		Minutes:         int(minutes),
-		ThresholdCPU:    thresholdCPU,
-		ThresholdMemory: thresholdMemory,
-		AppName:         envy.Get("STATS_APP_NAME", "Default App Name"),
+		Report:            report,
+		Minutes:           int(minutes),
+		ThresholdCPU:      thresholdCPU,
+		ThresholdMemory:   thresholdMemory,
+		OnlyOverThreshold: envy.Get("STATS_ONLY_OVER_THRESHOLD", "false") == "true",
+		AppName:           envy.Get("STATS_APP_NAME", "Default App Name"),
 	})
 
 	return stats, nil

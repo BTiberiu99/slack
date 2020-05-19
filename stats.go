@@ -34,6 +34,9 @@ type Stats struct {
 	onlyOverThreshold bool
 	once              sync.Once
 	block             chan int
+
+	subscribersMemOverThreshold []func()
+	subscribersCpuOverThreshold []func()
 }
 
 type ConfigStats struct {
@@ -70,13 +73,15 @@ func NewStats(config *ConfigStats) (*Stats, error) {
 	}
 
 	return &Stats{
-		appName:           config.AppName + hostname,
-		report:            config.Report,
-		thresholdMemory:   config.ThresholdMemory,
-		thresholdCPU:      config.ThresholdCPU,
-		minutes:           config.Minutes,
-		onlyOverThreshold: config.OnlyOverThreshold,
-		block:             make(chan int),
+		appName:                     config.AppName + hostname,
+		report:                      config.Report,
+		thresholdMemory:             config.ThresholdMemory,
+		thresholdCPU:                config.ThresholdCPU,
+		minutes:                     config.Minutes,
+		onlyOverThreshold:           config.OnlyOverThreshold,
+		block:                       make(chan int),
+		subscribersCpuOverThreshold: make([]func(), 0),
+		subscribersMemOverThreshold: make([]func(), 0),
 	}, nil
 }
 
@@ -121,6 +126,18 @@ func (s *Stats) Wait() {
 	<-s.block
 }
 
+func (s *Stats) SubscribeCpuOverThreshold(f func()) {
+	if f != nil {
+		s.subscribersCpuOverThreshold = append(s.subscribersCpuOverThreshold, f)
+	}
+}
+
+func (s *Stats) SubscribeMemOverThreshold(f func()) {
+	if f != nil {
+		s.subscribersMemOverThreshold = append(s.subscribersMemOverThreshold, f)
+	}
+}
+
 func (s *Stats) sendStats() error {
 
 	memory, err := memory.Get()
@@ -152,10 +169,21 @@ func (s *Stats) sendStats() error {
 
 	if memoryEmpty < s.thresholdMemory {
 		markRedMem = Red
+		go func() {
+			for _, f := range s.subscribersMemOverThreshold {
+				f()
+			}
+		}()
 	}
 
 	if cpuUsage > s.thresholdCPU {
 		markRedCpu = Red
+
+		go func() {
+			for _, f := range s.subscribersCpuOverThreshold {
+				f()
+			}
+		}()
 	}
 
 	if s.onlyOverThreshold && markRedMem == "" && markRedCpu == "" {
@@ -181,12 +209,14 @@ func (s *Stats) sendStats() error {
 
 func (s *Stats) Copy() *Stats {
 	return &Stats{
-		appName:           s.appName,
-		report:            s.report,
-		minutes:           s.minutes,
-		thresholdMemory:   s.thresholdMemory,
-		thresholdCPU:      s.thresholdCPU,
-		onlyOverThreshold: s.onlyOverThreshold,
-		block:             make(chan int),
+		appName:                     s.appName,
+		report:                      s.report,
+		minutes:                     s.minutes,
+		thresholdMemory:             s.thresholdMemory,
+		thresholdCPU:                s.thresholdCPU,
+		onlyOverThreshold:           s.onlyOverThreshold,
+		block:                       make(chan int),
+		subscribersCpuOverThreshold: make([]func(), 0),
+		subscribersMemOverThreshold: make([]func(), 0),
 	}
 }

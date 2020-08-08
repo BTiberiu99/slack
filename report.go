@@ -36,6 +36,8 @@ type Report struct {
 	webhookStats string
 
 	withStack bool
+
+	maxAttachements int
 }
 
 type ConfigReport struct {
@@ -49,7 +51,11 @@ type ConfigReport struct {
 	//Webhook for sending stats
 	WebhookStats string
 
+	//WithStack for seding stack with payload
 	WithStack bool
+
+	//Maximum number of attachements
+	MaxAttachements int
 }
 
 func NewReport(config *ConfigReport) (*Report, error) {
@@ -59,17 +65,18 @@ func NewReport(config *ConfigReport) (*Report, error) {
 	}
 
 	return &Report{
-		print:        config.Print,
-		webhook:      config.Webhook,
-		webhookStats: config.WebhookStats,
-		withStack:    config.WithStack,
+		print:           config.Print,
+		webhook:         config.Webhook,
+		webhookStats:    config.WebhookStats,
+		withStack:       config.WithStack,
+		maxAttachements: config.MaxAttachements,
 	}, nil
 }
 
 //Sends messages to slack
-func send(webhook, message string, messages []string, withStack bool) error {
+func send(webhook, message string, messages []string, r *Report) error {
 
-	errs := slack.Send(webhook, "", transfToPayload(message, messages, withStack))
+	errs := slack.Send(webhook, "", transfToPayload(message, messages, r))
 
 	//Create only one error from multiple errors
 	if len(errs) > 0 {
@@ -86,7 +93,7 @@ func send(webhook, message string, messages []string, withStack bool) error {
 
 }
 
-func transfToPayload(message string, messages []string, withStack bool) slack.Payload {
+func transfToPayload(message string, messages []string, r *Report) slack.Payload {
 	payload := slack.Payload{
 		Text:     fmt.Sprintf("_*%s*_", message),
 		Markdown: true,
@@ -94,14 +101,18 @@ func transfToPayload(message string, messages []string, withStack bool) slack.Pa
 
 	lenM := len(messages)
 
-	if lenM == 0 || !withStack {
+	if lenM == 0 || !r.withStack {
 		return payload
 	}
 
 	attachments := make([]slack.Attachment, lenM)
 	red := hexRed
 
-	max := 80
+	max := r.maxAttachements
+
+	if max == 0 {
+		max = 10000
+	}
 
 	//Create message
 	for i := 0; i < lenM && i < max; i++ {
@@ -129,7 +140,7 @@ func (r *Report) Stats(message string, messages ...string) error {
 	if r.webhookStats == "" {
 		return errWebhookStats
 	}
-	return send(r.webhookStats, message, messages, r.withStack)
+	return send(r.webhookStats, message, messages, r)
 }
 
 //Error ... prints or sends error to slack
@@ -150,7 +161,7 @@ func (r *Report) Error(err error) error {
 		//Send to slack
 		stacks := strings.Split(tracerr.SprintSourceColor(err), "\n")
 
-		return send(r.webhook, stacks[0], stacks[1:], r.withStack)
+		return send(r.webhook, stacks[0], stacks[1:], r)
 	}
 
 	return nil

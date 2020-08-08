@@ -20,10 +20,21 @@ func FromEnvReport() (*Report, error) {
 		return nil, err
 	}
 
+	maxAttachements, err := strconv.Atoi(envy.Get("REPORT_MAX_ATTACHEMENTS", "10000"))
+
+	if err != nil {
+
+		return nil, err
+	}
+
+	withStack := envy.Get("REPORT_WITH_STACK", "true") == "true"
+
 	report, err := NewReport(&ConfigReport{
-		Print:        strings.ToLower(envy.Get("REPORT_LIVE", "true")) != "true",
-		Webhook:      slackWebhook,
-		WebhookStats: slackWebhookStats,
+		Print:           strings.ToLower(envy.Get("REPORT_LIVE", "true")) != "true",
+		Webhook:         slackWebhook,
+		WebhookStats:    slackWebhookStats,
+		MaxAttachements: maxAttachements,
+		WithStack:       withStack,
 	})
 
 	if err != nil {

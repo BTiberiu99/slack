@@ -16,5 +16,6 @@ require (
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/ztrue/tracerr v0.3.0
 	golang.org/x/net v0.0.0-20200202094626-16171245cfb2 // indirect
+	google.golang.org/genproto v0.0.0-20200806141610-86f49bd18e98
 	moul.io/http2curl v1.0.0 // indirect
 )

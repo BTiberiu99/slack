@@ -34,6 +34,8 @@ type Report struct {
 	webhook string
 
 	webhookStats string
+
+	withStack bool
 }
 
 type ConfigReport struct {
@@ -46,6 +48,8 @@ type ConfigReport struct {
 
 	//Webhook for sending stats
 	WebhookStats string
+
+	WithStack bool
 }
 
 func NewReport(config *ConfigReport) (*Report, error) {
@@ -58,13 +62,14 @@ func NewReport(config *ConfigReport) (*Report, error) {
 		print:        config.Print,
 		webhook:      config.Webhook,
 		webhookStats: config.WebhookStats,
+		withStack:    config.WithStack,
 	}, nil
 }
 
 //Sends messages to slack
-func send(webhook, message string, messages []string) error {
+func send(webhook, message string, messages []string, withStack bool) error {
 
-	errs := slack.Send(webhook, "", transfToPayload(message, messages))
+	errs := slack.Send(webhook, "", transfToPayload(message, messages, withStack))
 
 	//Create only one error from multiple errors
 	if len(errs) > 0 {
@@ -81,7 +86,7 @@ func send(webhook, message string, messages []string) error {
 
 }
 
-func transfToPayload(message string, messages []string) slack.Payload {
+func transfToPayload(message string, messages []string, withStack bool) slack.Payload {
 	payload := slack.Payload{
 		Text:     fmt.Sprintf("_*%s*_", message),
 		Markdown: true,
@@ -89,7 +94,7 @@ func transfToPayload(message string, messages []string) slack.Payload {
 
 	lenM := len(messages)
 
-	if lenM == 0 {
+	if lenM == 0 || !withStack {
 		return payload
 	}
 
@@ -124,7 +129,7 @@ func (r *Report) Stats(message string, messages ...string) error {
 	if r.webhookStats == "" {
 		return errWebhookStats
 	}
-	return send(r.webhookStats, message, messages)
+	return send(r.webhookStats, message, messages, r.withStack)
 }
 
 //Error ... prints or sends error to slack
@@ -145,7 +150,7 @@ func (r *Report) Error(err error) error {
 		//Send to slack
 		stacks := strings.Split(tracerr.SprintSourceColor(err), "\n")
 
-		return send(r.webhook, stacks[0], stacks[1:])
+		return send(r.webhook, stacks[0], stacks[1:], r.withStack)
 	}
 
 	return nil

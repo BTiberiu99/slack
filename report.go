@@ -96,8 +96,10 @@ func transfToPayload(message string, messages []string) slack.Payload {
 	attachments := make([]slack.Attachment, lenM)
 	red := hexRed
 
+	max := 80
+
 	//Create message
-	for i := 0; i < lenM; i++ {
+	for i := 0; i < lenM && i < max; i++ {
 
 		text := regexReplaceColors.ReplaceAllLiteralString(messages[i], "")
 

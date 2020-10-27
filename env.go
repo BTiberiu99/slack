@@ -8,6 +8,7 @@ import (
 )
 
 func FromEnvReport() (*Report, error) {
+
 	slackWebhook, err := envy.MustGet("REPORT_SLACK_WEBHOOK")
 
 	if err != nil {

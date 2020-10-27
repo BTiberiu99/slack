@@ -168,6 +168,13 @@ func (r *Report) Error(err error) error {
 
 }
 
+//AsyncError ... prints or sends error to slack async
+func (r *Report) AsyncError(err error) {
+	go func() {
+		r.Error(err)
+	}()
+}
+
 //ErrorAndPanic ... prints or sends error to slack and panics
 func (r *Report) ErrorAndPanic(err error) {
 	//send error
